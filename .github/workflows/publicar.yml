@@ -1,0 +1,37 @@
+name: Publicar versión
+
+# Se activa cuando llega la rama "subida" con CalcIng.apk, version.txt y notas.md.
+# Crea o actualiza la versión en Releases (como la más reciente) y borra la rama.
+on:
+  push:
+    branches: [subida]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Crear versión
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(cat version.txt)
+          sha256sum CalcIng.apk | cut -d' ' -f1 > CalcIng.apk.sha256
+          if gh release view "v$VERSION" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            gh release upload "v$VERSION" CalcIng.apk CalcIng.apk.sha256 --clobber --repo "${{ github.repository }}"
+          else
+            gh release create "v$VERSION" CalcIng.apk CalcIng.apk.sha256 \
+              --repo "${{ github.repository }}" --target main --latest \
+              --title "CalcIng $VERSION" \
+              --notes-file notas.md
+          fi
+          git push origin --delete subida
