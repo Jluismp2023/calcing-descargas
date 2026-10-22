@@ -1,0 +1,14 @@
+name: Ping
+on:
+  push:
+    branches: [ping]
+permissions:
+  contents: write
+jobs:
+  ping:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          mkdir p && cd p && git init -q -b r && git config user.name a && git config user.email a@a
+          date > t.txt && git add t.txt && git commit -q -m ping
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" r:pong
